@@ -20,8 +20,9 @@ def calculate_min_max(cluster):
 
 
 def image_cropping( img):
-    crop_img = img[:, 1749:3240]
+    crop_img = img[0:7000, 1749:3240]
     crop_region = np.array((1749, 3240))
+    important_region = np.array((2200, 2620))
     ignore_region = np.array([
         (1749, 1865),
         (2620, 2653)

@@ -1,35 +1,45 @@
-from keras.preprocessing.image import ImageDataGenerator
-from skimage import io
+from albumentations import (
+    HorizontalFlip, IAAPerspective, ShiftScaleRotate, CLAHE, RandomRotate90,
+    Transpose, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
+    IAAAdditiveGaussianNoise, GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
+    IAASharpen, IAAEmboss, RandomBrightnessContrast, Flip, OneOf, Compose
+)
+
 import numpy as np
-import os
-from PIL import Image
-import cv2
 
-datagen = ImageDataGenerator(        
-        rotation_range = 40,
-        shear_range = 0.2,
-        zoom_range = 0.2,
-        horizontal_flip = True,
-        brightness_range = (0.5, 1.5))
+def strong_aug(p=0.5):
+    return Compose([
+        RandomRotate90(),
+        Flip(),
+        Transpose(),
+        OneOf([
+            IAAAdditiveGaussianNoise(),
+            GaussNoise(),
+        ], p=0.2),
+        OneOf([
+            MotionBlur(p=0.2),
+            MedianBlur(blur_limit=3, p=0.1),
+            Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=45, p=0.2),
+        OneOf([
+            OpticalDistortion(p=0.3),
+            GridDistortion(p=0.1),
+            IAAPiecewiseAffine(p=0.3),
+        ], p=0.2),
+        OneOf([
+            CLAHE(clip_limit=2),
+            IAASharpen(),
+            IAAEmboss(),
+            RandomBrightnessContrast(),
+        ], p=0.3),
+        HueSaturationValue(p=0.3),
+    ], p=p)
 
-image_directory = r'data/hgs_flush/'
-SIZE = 224
-dataset = []
-my_images = os.listdir(image_directory)
-for i, image_name in enumerate(my_images):    
-    if (image_name.split('.')[1] == 'bmp'):        
-        image = io.imread(image_directory + image_name)  
-        print(image.size)
-        #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)      
-        image = Image.fromarray(image)        
-        image = image.resize((SIZE,SIZE)) 
-        dataset.append(np.array(image))
-x = np.array(dataset)
-i = 0
-for batch in datagen.flow(x, batch_size=16,
-                          save_to_dir= r'data/augmented_flush',
-                          save_prefix='dr',
-                          save_format='bmp'):    
-    i += 1    
-    if i > 50:        
-        break
+image = np.ones((300, 300, 3), dtype=np.uint8)
+mask = np.ones((300, 300), dtype=np.uint8)
+whatever_data = "my name"
+augmentation = strong_aug(p=0.9)
+data = {"image": image, "mask": mask, "whatever_data": whatever_data, "additional": "hello"}
+augmented = augmentation(**data)
+image, mask, whatever_data, additional = augmented["image"], augmented["mask"], augmented["whatever_data"], augmented["additional"]

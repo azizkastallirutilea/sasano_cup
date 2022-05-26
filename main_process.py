@@ -11,7 +11,6 @@ from tensorflow.keras import layers
 from tensorflow.keras import Sequential
 from classification_algorithm import *
 import pickle
-import time
 
 class Main_Process:
      
@@ -49,7 +48,6 @@ class Main_Process:
         self.composed_model = pickle.load(open(filename, 'rb'))
 
     def composedModelInference(self, frame):
-        #print(frame)
         extracted_features = self.mobileNetV2.predict(frame.reshape(1,224,224,3)) 
         y_pred = self.composed_model.predict(extracted_features)
         return int(y_pred[0])
@@ -59,12 +57,8 @@ class Main_Process:
         assert img.ndim == 2
 
         bin_img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 23,9)
-        _, bin_img = cv2.threshold(bin_img, 127, 255,1)
+        #_, bin_img = cv2.threshold(bin_img, 127, 255,1)
         return bin_img
-
-
-
-        
     
     def contours_detection(self, img):
         contours, _ = cv2.findContours(img, cv2.RETR_TREE ,cv2.CHAIN_APPROX_SIMPLE)
@@ -98,17 +92,13 @@ class Main_Process:
             clusters.append(X[labels==cluster_])
         return clusters
 
-    def draw_rectangles(self, clusters, img, image_label , load_choice, start):
-
-        #start = time.time()
+    def draw_rectangles(self, clusters, img, image_label , load_choice):
         for cluster in clusters:
             min_X,max_X,min_Y,max_Y= calculate_min_max(cluster)
             area = cv2.contourArea(cluster)
             if(area > 50):
                 
                 frame = img[min_Y-10:max_Y+10, min_X-10:max_X+10]
-
-                
                 frame = cv2.resize(frame, (224, 224), interpolation = cv2.INTER_AREA) #resize the frame
                 frame = frame/255 
                 if load_choice == 'nn':
@@ -117,18 +107,9 @@ class Main_Process:
                 elif load_choice=='composed':
                     y_pred = self.composedModelInference(frame)
                     predicted_anomaly = self.classnames_ids[str(y_pred)]
-
-            
-
-                end = time.time()
-                inf_time = end-start
-                
-
-                
                 cv2.rectangle(img, (min_X, min_Y), (max_X, max_Y), (255,255,0), 3)
                 cv2.putText(img, predicted_anomaly, (min_X, min_Y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
-                #cv2.drawContours(img, [box], 0, (255,255,255), 2)*
-        print('inference time execution :',inf_time)
+                #cv2.drawContours(img, [box], 0, (255,255,255), 2)
         os.makedirs('results', exist_ok=True)
         cv2.imwrite('results/'+image_label+'.png', img)
 
@@ -143,24 +124,15 @@ class Main_Process:
         for image_path in tqdm(glob(self.images_folder+'/*.bmp')):
             image_label = image_path.split('\\')[-1].split('.')[0]
             img = cv2.imread(image_path)
-
-            start = time.time()
-
             croped = image_cropping(img)
             img_bin = self.image_binarization(croped)
-            
             contours = self.contours_detection(img_bin)
-            
             anomalies = self.regroup_contours_with_DBScan(contours)
-
-            #end = time.time()
-            #inf_time = end-start
-            self.draw_rectangles(anomalies, croped, image_label,load_choice, start)
+            self.draw_rectangles(anomalies, croped, image_label,load_choice)
             
             
 if __name__ == '__main__':
     images_folder = 'images'
+#    images_folder = 'images_test'
     main_process = Main_Process(images_folder)
-    main_process.exc_pipeline(load_choice= 'nn')
-    
-    #print('inference time execution :',inf_time)
+    main_process.exc_pipeline(load_choice= 'composed')
