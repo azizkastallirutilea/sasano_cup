@@ -1,5 +1,5 @@
 from glob import glob
-from winreg import FlushKey
+
 import cv2
 from utils import *
 import numpy as np
