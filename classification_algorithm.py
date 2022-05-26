@@ -2,7 +2,6 @@ from glob import glob
 import cv2
 import os
 import matplotlib.pyplot as plt
-
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
@@ -17,7 +16,7 @@ from tensorflow.keras.optimizers import Adam
 import pickle
 import json
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV,cross_validate,cross_val_score,KFold
-from sklearn.utils import class_weight
+
 import shutil
 
 import time
@@ -25,7 +24,7 @@ import time
 
 class ClassificationModel:
     
-    def __init__(self, n_classes=2, n_components=20, input_shape=(224, 224, 3), epochs=100, batch_size=32, learning_rate=0.001, train_choice='composed', splitBy='random', test_size=0.2, stratify=True):
+    def __init__(self, n_classes=2, n_components=20, input_shape=(224, 224, 3), epochs=10, batch_size=32, learning_rate=0.001, train_choice='composed', splitBy='random', test_size=0.2, stratify=True):
         self.n_components = None
         self.mobileNetV2 = None
         self.model = None
@@ -221,10 +220,7 @@ class ClassificationModel:
         self.__initNeuralNetworkModel()
         self.__loadDataSet()
         y_train = np.asarray(self.y_train, dtype=np.float64)
-        class_weights = dict(zip(np.unique(y_train), class_weight.compute_class_weight('balanced', np.unique(y_train), 
-                y_train)))
-        
-        self.model.fit(epochs=self.epochs, batch_size=self.batch_size , x=self.X_train, y=y_train, class_weight=class_weights)
+        self.model.fit(epochs=self.epochs, batch_size=self.batch_size , x=self.X_train, y=y_train)
         self.y_pred = np.argmax(self.model(self.X_test), axis=1)
         #save the model
         os.makedirs(os.path.join('weights', 'nn'), exist_ok=True)
@@ -300,7 +296,7 @@ class ClassificationModel:
           
     
 if __name__ == '__main__':
-    model = ClassificationModel(epochs=20, train_choice='nn', splitBy='random')
+    model = ClassificationModel(epochs=10, train_choice='nn', splitBy='random')
     start = time.time()
     model.train()
     model.show_classification_report()

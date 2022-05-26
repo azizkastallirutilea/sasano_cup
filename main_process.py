@@ -1,4 +1,5 @@
 from glob import glob
+from winreg import FlushKey
 import cv2
 from utils import *
 import numpy as np
@@ -89,7 +90,7 @@ class Main_Process:
         train_dataset = X.reshape((nsamples,nx*ny))
 
         #clustering
-        dbscan = DBSCAN(eps = 65, min_samples = 20)
+        dbscan = DBSCAN(eps = 50, min_samples = 20)
         model = dbscan.fit(train_dataset)
         labels = model.labels_
 
@@ -101,6 +102,9 @@ class Main_Process:
     def draw_rectangles(self, clusters, img, image_label , load_choice, start):
 
         #start = time.time()
+        frame_list=[]
+        min_max=[]
+        
         for cluster in clusters:
             min_X,max_X,min_Y,max_Y= calculate_min_max(cluster)
             area = cv2.contourArea(cluster)
@@ -111,24 +115,38 @@ class Main_Process:
                 
                 frame = cv2.resize(frame, (224, 224), interpolation = cv2.INTER_AREA) #resize the frame
                 frame = frame/255 
-                if load_choice == 'nn':
-                    y_pred = np.argmax(self.model.predict(frame.reshape(1, 224, 224, 3)), axis=1)
-                    predicted_anomaly = self.classnames_ids[str(y_pred[0])]
-                elif load_choice=='composed':
-                    y_pred = self.composedModelInference(frame)
-                    predicted_anomaly = self.classnames_ids[str(y_pred)]
-
-            
-
-                end = time.time()
-                inf_time = end-start
-                
-
-                
+                frame=frame.reshape(1, 224, 224, 3)
+                frame_list.append(frame)
+                frame_lists=np.vstack(frame_list)
                 cv2.rectangle(img, (min_X, min_Y), (max_X, max_Y), (255,255,0), 3)
-                cv2.putText(img, predicted_anomaly, (min_X, min_Y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
-                #cv2.drawContours(img, [box], 0, (255,255,255), 2)*
+                min_max.append([min_X,min_Y])
+
+        if load_choice == 'nn':
+            #y_pred = np.argmax(self.model.predict(frame_lists), axis=1)
+            y_pred = np.argmax(self.model.predict(frame_lists), axis=1)
+            #print(y_pred)
+           # predicted_anomaly = self.classnames_ids[str(y_pred[0])]
+        elif load_choice=='composed':
+            y_pred = self.composedModelInference(frame)
+           # predicted_anomaly = self.classnames_ids[str(y_pred)]
+
+    
+
+        end = time.time()
+        inf_time = end-start
         print('inference time execution :',inf_time)
+        
+        i=0
+        for value in y_pred:
+            if value==0 :
+                labela= "Flush"
+            else : labela = "Not Flush"
+            predicted_anomaly = self.classnames_ids[str(value)]
+            
+            cv2.putText(img, labela, (min_max[i][0], min_max[i][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+            i+=1
+            #cv2.drawContours(img, [box], 0, (255,255,255), 2)*
+        
         os.makedirs('results', exist_ok=True)
         cv2.imwrite('results/'+image_label+'.png', img)
 
