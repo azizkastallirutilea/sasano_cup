@@ -3,3 +3,5 @@ dataset/
 data/
 results/
 images/
+saved_model/
+conv
