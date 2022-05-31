@@ -130,8 +130,8 @@ class ClassificationModel:
         self.y_pred = np.argmax(self.model(self.X_test), axis=1)
         #save the model
         os.makedirs(os.path.join('weights', 'nn'), exist_ok=True)
-        self.model.save_weights(os.path.join('weights', 'nn', 'nn_model'))
-        self.model.save(r'saved_model')
+       # self.model.save_weights(os.path.join('weights', 'nn', 'nn_model'))
+        self.model.save(os.path.join('weights', 'nn'))
         
     def __execute_composedModelPipeline(self):
         self.__initComposedModel()
@@ -151,19 +151,20 @@ class ClassificationModel:
         for i, frame in enumerate(self.X_test):
             class_id_pred = self.classnames_ids[self.y_pred[i]]
             class_id_true = self.classnames_ids[int(self.y_test[i])]
-            plt.title('True: {} Predicted: {}'.format(class_id_true, class_id_pred))
-            plt.imshow(frame)
-            plt.show()
+            if class_id_true==self.classnames_ids[0]:
+                plt.title('True: {} Predicted: {}'.format(class_id_true, class_id_pred))
+                plt.imshow(frame)
+                plt.show()
         
     def train(self):
         if self.train_choice == 'nn':
             self.__execute_neuralNetworkPipeline()
         elif self.train_choice == 'composed':
             self.__execute_composedModelPipeline()
-            
+           
             
 if __name__ == '__main__':
     model = ClassificationModel(epochs=100, train_choice='nn', splitBy='random')
     model.train()
     model.show_classification_report()
-    #model.show_results()
+    model.show_results()

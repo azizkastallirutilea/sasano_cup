@@ -124,6 +124,7 @@ class Main_Process:
     def exc_pipeline(self,load_choice):
         if load_choice == 'nn':
             self.__loadNetworkModel()
+            self.model.save(os.path.join('weights','neural'))
         elif load_choice == 'composed':
             self.__loadcomposedModelPipeline()
         for image_path in tqdm(glob(self.images_folder+'/*.bmp')):
