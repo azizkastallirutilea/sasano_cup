@@ -6,9 +6,9 @@ Detecting anomalies and classifying them into two classes: Flushes and Other.
 pip install -r requirements.txt
 
 # Dataset :
-- ## images.zip: [a link](https://file.io/EH1FPNNP15jd)
+- ## [images.zip](https://file.io/EH1FPNNP15jd)
     Original images where we're going to detect the anomalies.
-- ## dataset.zip: 
+- ## [dataset.zip](https://file.io/EH1FPNNP15jd)
     Data splitted into train and test.
 
 # Check if the directory structure is as follows.
